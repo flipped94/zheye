@@ -1,14 +1,10 @@
 <template>
   <div class="create-post-page">
-    <h4>{{isEditMode ? '编辑文章' : '新建文章'}}</h4>
-    <uploader
-      action="/oss/upload"
-      :beforeUpload="uploadCheck"
-      @file-uploaded="handleFileUploaded"
-      :uploaded="uploadedData"
-      class="d-flex align-items-center justify-content-center bg-light text-secondary w-100 my-4"
-    >
-      <h2>点击上传头图</h2>
+    <h4>{{ isEditMode ? '编辑文章' : '新建文章' }}</h4>
+    <uploader action="/oss/upload" :beforeUpload="uploadCheck"
+      @file-uploaded="handleFileUploaded" :uploaded="uploadedData"
+      class="d-flex align-items-center justify-content-center bg-light text-secondary w-100 my-4">
+      <h2>点击上传</h2>
       <template #loading>
         <div class="d-flex">
           <div class="spinner-border text-secondary" role="status">
@@ -26,27 +22,15 @@
     </uploader>
     <validate-form @form-submit="onFormSubmit">
       <div class="mb-3">
-        <label class="form-label">文章标题：</label>
-        <validate-input
-          :rules="titleRules" v-model="titleVal"
-          placeholder="请输入文章标题"
-          type="text"
-        />
+        <validate-input :rules="titleRules" v-model="titleVal" placeholder="请输入名称"
+          type="text" />
       </div>
       <div class="mb-3">
-        <label class="form-label">文章详情：</label>
-        <editor
-          v-model="contentVal"
-          :options="editorOptions"
-          @blur="checkEditor"
-          :class="{'is-invalid': !editorStatus.isValid}"
-        >
-        </editor>
-        <span v-if="!editorStatus.isValid" class="invalid-feedback mt-1">{{editorStatus.message}}</span>
+        <validate-input :rules="contentRules" v-model="contentVal"
+          placeholder="请输入简介信息" type="text" />
       </div>
       <template #submit>
-        <button class="btn btn-primary btn-large">{{isEditMode ? '更新文章' : '发表文章'}}
-</button>
+        <button class="btn btn-primary btn-large">{{ '提交修改' }}</button>
       </template>
     </validate-form>
   </div>
@@ -63,7 +47,6 @@ import { useUserStore } from '../store/user'
 import ValidateInput, { RulesProp } from '../components/ValidateInput.vue'
 import ValidateForm from '../components/ValidateForm.vue'
 import Uploader from '../components/Uploader.vue'
-import Editor from '../components/Editor.vue'
 import createMessage from '../components/createMessage'
 import { beforeUploadCheck } from '../helper'
 export default defineComponent({
@@ -71,16 +54,11 @@ export default defineComponent({
   components: {
     ValidateInput,
     ValidateForm,
-    Uploader,
-    Editor
+    Uploader
   },
   setup() {
     const uploadedData = ref()
     const titleVal = ref('')
-    const editorStatus = reactive({
-      isValid: true,
-      message: ''
-    })
     const router = useRouter()
     const route = useRoute()
     const isEditMode = !!route.query.id
@@ -90,25 +68,13 @@ export default defineComponent({
     const userStore = useUserStore()
     const textArea = ref<null | HTMLTextAreaElement>(null)
     let imageId = ''
-    const editorOptions: Options = {
-      spellChecker: false
-    }
     const titleRules: RulesProp = [
-      { type: 'required', message: '文章标题不能为空' }
+      { type: 'required', message: '名称不能为空' }
     ]
     const contentVal = ref('')
     const contentRules: RulesProp = [
-      { type: 'required', message: '文章详情不能为空' }
+      { type: 'required', message: '简介信息不能为空' }
     ]
-    const checkEditor = () => {
-      if (contentVal.value.trim() === '') {
-        editorStatus.isValid = false
-        editorStatus.message = '文章详情不能为空'
-      } else {
-        editorStatus.isValid = true
-        editorStatus.message = ''
-      }
-    }
     onMounted(() => {
       if (isEditMode) {
         postStore.fetchPost(postId).then((currentPost) => {
@@ -126,8 +92,7 @@ export default defineComponent({
       }
     }
     const onFormSubmit = async (result: boolean) => {
-      checkEditor()
-      if (result && editorStatus.isValid && userStore.data) {
+      if (result && userStore.data) {
         const { column, _id } = userStore.data
         if (column) {
           const newPost: PostProps = {
@@ -185,10 +150,7 @@ export default defineComponent({
       handleFileUploaded,
       isEditMode,
       uploadedData,
-      textArea,
-      editorOptions,
-      checkEditor,
-      editorStatus
+      textArea
     }
   }
 })
@@ -199,17 +161,21 @@ export default defineComponent({
   cursor: pointer;
   overflow: hidden;
 }
+
 .create-post-page .file-upload-container img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .uploaded-area {
   position: relative;
 }
+
 .uploaded-area:hover h3 {
   display: block;
 }
+
 .uploaded-area h3 {
   display: none;
   position: absolute;

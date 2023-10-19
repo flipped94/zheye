@@ -14,7 +14,7 @@ app.use(router)
 app.use(store)
 app.use(pinia)
 const globalStore = useGlobalStore()
-axios.defaults.baseURL = process.env.NODE_ENV === 'development' ? '/' : 'http://api.vikingship.xyz/api/'
+axios.defaults.baseURL = process.env.NODE_ENV === 'development' ? 'http://localhost' : 'http://api.vikingship.xyz/api/'
 axios.interceptors.request.use(config => {
   // store.commit('setLoading', true)
   // store.commit('setError', { status: false, message: '' })

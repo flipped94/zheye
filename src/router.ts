@@ -6,6 +6,7 @@ import Signup from './views/Signup.vue'
 import ColumnDetail from './views/ColumnDetail.vue'
 import CreatePost from './views/CreatePost.vue'
 import PostDetail from './views/PostDetail.vue'
+import EditProfile from './views/EditProfile.vue'
 import store from './store'
 import { useUserStore } from './store/user'
 const routerHistory = createWebHistory()
@@ -44,6 +45,11 @@ const router = createRouter({
       path: '/posts/:id',
       name: 'post',
       component: PostDetail
+    },
+    {
+      path: '/editprofile',
+      name: 'editprofile',
+      component: EditProfile
     }
   ]
 })
@@ -51,8 +57,10 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   const { requiredLogin, redirectAlreadyLogin } = to.meta
   if (!userStore.isLogin) {
-    if (userStore.token) {
-      axios.defaults.headers.common.Authorization = `Bearer ${userStore.token}`
+    if (userStore.accessToken) {
+      // axios.defaults.headers.common.Authorization = `Bearer ${userStore.token}`
+      axios.defaults.headers.common.accessToken = userStore.accessToken
+      axios.defaults.headers.common.refreshToken = userStore.refreshToken
       userStore.fetchCurrentUser().then(() => {
         if (redirectAlreadyLogin) {
           next('/')

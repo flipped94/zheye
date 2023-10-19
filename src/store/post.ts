@@ -36,7 +36,7 @@ export const usePostStore = defineStore('post', {
       // 2 已经加载的页数要小于希望加载的页数
       const loadedCurrentPage = (loadedColumns[cid] && loadedColumns[cid].currentPage) || 0
       if (!Object.keys(loadedColumns).includes(cid) || loadedCurrentPage < currentPage) {
-        const { data } = await axios.get<ListResType>(`/columns/${cid}/posts?currentPage=${currentPage}&pageSize=${pageSize}`)
+        const { data } = await axios.get<ListResType>(`/article/portal/column/${cid}?page=${currentPage}&pageSize=${pageSize}`)
         const { count, list } = data.data
         this.data = { ...this.data, ...arrToObj(list) }
         this.loadedColumns[cid] = {

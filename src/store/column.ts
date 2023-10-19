@@ -28,7 +28,7 @@ export const useColumnStore = defineStore('column', {
     async fetchColumns(params: ListReqType = {}) {
       const { currentPage = 1, pageSize = 6 } = params
       if (this.currentPage < currentPage) {
-        const { data } = await axios.get<ListResType<ColumnProps>>(`/columns?currentPage=${currentPage}&pageSize=${pageSize}`)
+        const { data } = await axios.get<ListResType<ColumnProps>>(`/columns?page=${currentPage}&pageSize=${pageSize}`)
         const { count, list } = data.data
         this.$patch({
           currentPage,

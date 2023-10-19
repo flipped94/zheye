@@ -12,7 +12,8 @@ export interface UserDataProps {
 }
 
 export interface UserProps {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
   isLogin: boolean;
   data: UserDataProps | null;
 }
@@ -20,7 +21,8 @@ export interface UserProps {
 export const useUserStore = defineStore('user', {
   state: (): UserProps => {
     return {
-      token: localStorage.getItem('token') || '',
+      accessToken: localStorage.getItem('accessToken') || '',
+      refreshToken: localStorage.getItem('refreshToken') || '',
       isLogin: false,
       data: null
     }
@@ -31,20 +33,27 @@ export const useUserStore = defineStore('user', {
         email,
         password
       }
-      const { data } = await axios.post<ResponseType>('/user/login', payload)
-      const { token } = data.data
-      this.token = token
-      localStorage.setItem('token', token)
-      axios.defaults.headers.common.Authorization = `Bearer ${token}`
+      const { data } = await axios.post<ResponseType>('/passport/login', payload)
+      this.accessToken = data.data.accessToken
+      this.refreshToken = data.data.refreshToken
+      localStorage.setItem('accessToken', this.accessToken)
+      localStorage.setItem('refreshToken', this.refreshToken)
+      // axios.defaults.headers.common.Authorization = `Bearer ${token}`
+      axios.defaults.headers.accessToken = this.accessToken
+      axios.defaults.headers.refreshToken = this.refreshToken
     },
     logout() {
-      this.token = ''
+      this.accessToken = ''
+      this.refreshToken = ''
       this.isLogin = false
-      localStorage.removeItem('token')
-      delete axios.defaults.headers.common.Authorization
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      // delete axios.defaults.headers.common.Authorization
+      delete axios.defaults.headers.accessToken
+      delete axios.defaults.headers.refreshToken
     },
     async fetchCurrentUser() {
-      const { data } = await axios.get<ResponseType>('/user/current')
+      const { data } = await axios.get<ResponseType>('/author/current')
       this.isLogin = true
       this.data = { ...data.data }
     }

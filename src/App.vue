@@ -3,7 +3,7 @@
     <global-header :data="currentUser" :is-login="isLogin"></global-header>
     <loader v-if="isLoading"></loader>
     <router-view></router-view>
-    <footer class="text-center py-4 text-secondary bg-light mt-6">
+    <!-- <footer class="text-center py-4 text-secondary bg-light mt-6">
       <small>
         <ul class="list-inline mb-0">
           <li class="list-inline-item">© 2020 者也专栏</li>
@@ -13,7 +13,7 @@
           <li class="list-inline-item">更多</li>
         </ul>
       </small>
-    </footer>
+    </footer> -->
   </div>
 </template>
 
