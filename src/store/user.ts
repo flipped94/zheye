@@ -42,6 +42,10 @@ export const useUserStore = defineStore('user', {
       axios.defaults.headers.accessToken = this.accessToken
       axios.defaults.headers.refreshToken = this.refreshToken
     },
+    async updateAuthor(id: string, payload: UserDataProps) {
+      const { data } = await axios.patch<ResponseType>('/author', payload)
+      this.data = { ...data.data }
+    },
     logout() {
       this.accessToken = ''
       this.refreshToken = ''
@@ -57,5 +61,8 @@ export const useUserStore = defineStore('user', {
       this.isLogin = true
       this.data = { ...data.data }
     }
+  },
+  getters: {
+    getCurrentAuthor: (state) => () => state.data
   }
 })

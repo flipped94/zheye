@@ -1,132 +1,137 @@
 <template>
-  <div class="create-post-page">
-    <h4>{{ isEditMode ? '编辑文章' : '新建文章' }}</h4>
+  <div class="eidt-profile-page container-md">
+    <ul class="nav nav-tabs my-4">
+      <li class="nav-item" @click.prevent="activeName = 'person'">
+        <a class="nav-link" :class="{ 'active': activeName === 'person' }"
+          href="#">更新个人资料</a>
+      </li>
+      <li class="nav-item" @click.prevent="activeName = 'column'">
+        <a class="nav-link" :class="{ 'active': activeName === 'column' }"
+          href="#">更新专栏信息</a>
+      </li>
+    </ul>
+    <h4>编辑个人资料</h4>
     <uploader action="/oss/upload" :beforeUpload="uploadCheck"
       @file-uploaded="handleFileUploaded" :uploaded="uploadedData"
-      class="d-flex align-items-center justify-content-center bg-light text-secondary w-100 my-4">
-      <h2>点击上传</h2>
-      <template #loading>
-        <div class="d-flex">
-          <div class="spinner-border text-secondary" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-          <h2>正在上传</h2>
-        </div>
-      </template>
+      style="margin-left:auto; margin-right: auto; width: 200px;height: 200px;border-radius: 200px;overflow: hidden;cursor: pointer;border: 1px solid #efefef;">
+      <h2></h2>``
       <template #uploaded="dataProps">
-        <div class="uploaded-area">
-          <img :src="dataProps.uploadedData && dataProps.uploadedData.data.url">
-          <h3>点击重新上传</h3>
-        </div>
+        <img :src="dataProps.uploadedData && dataProps.uploadedData.data.url"
+          style="height: 200px; width: 200px;">
       </template>
     </uploader>
-    <validate-form @form-submit="onFormSubmit">
-      <div class="mb-3">
-        <validate-input :rules="titleRules" v-model="titleVal" placeholder="请输入名称"
-          type="text" />
+    <validate-form @form-submit="formSubmit">
+      <div class="mb-3 validate-input">
+        <label class="form-lable">昵称</label>
+        <validate-input placeholder="请输入昵称" :rules="nickNameRules"
+          v-model="userProfile.title"></validate-input>
       </div>
-      <div class="mb-3">
-        <validate-input :rules="contentRules" v-model="contentVal"
-          placeholder="请输入简介信息" type="text" />
+      <div class="mb-3 validate-input">
+        <label class="form-label">描述</label>
+        <validate-input placeholder="请输入描述" :rules="descriptionRules"
+          v-model="userProfile.description"></validate-input>
       </div>
       <template #submit>
-        <button class="btn btn-primary btn-large">{{ '提交修改' }}</button>
+        <button class="btn btn-primary">提交修改</button>
       </template>
     </validate-form>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, reactive } from 'vue'
-import { useStore } from 'vuex'
-import { useRouter, useRoute } from 'vue-router'
-import { Options } from 'easymde'
-import { GlobalDataProps, PostProps, ResponseType, ImageProps } from '../store'
-import { usePostStore } from '../store/post'
-import { useUserStore } from '../store/user'
-import ValidateInput, { RulesProp } from '../components/ValidateInput.vue'
+import { defineComponent, onMounted, reactive, ref, watchEffect } from 'vue'
 import ValidateForm from '../components/ValidateForm.vue'
+import ValidateInput, { RulesProp } from '../components/ValidateInput.vue'
 import Uploader from '../components/Uploader.vue'
-import createMessage from '../components/createMessage'
+import { useStore } from 'vuex'
+import { GlobalDataProps, ResponseType, ImageProps, UserProps, ColumnProps } from '@/store'
 import { beforeUploadCheck } from '../helper'
+import createMessage from '@/components/createMessage'
+import { useUserStore } from '../store/user'
+import { useColumnStore } from '../store/column'
+type ActiveName = 'person' | 'column'
 export default defineComponent({
-  name: 'CreatePost',
+  name: 'EditProfile',
   components: {
-    ValidateInput,
     ValidateForm,
+    ValidateInput,
     Uploader
   },
   setup() {
-    const uploadedData = ref()
-    const titleVal = ref('')
-    const router = useRouter()
-    const route = useRoute()
-    const isEditMode = !!route.query.id
-    const postId = route.query.id as string
     const store = useStore<GlobalDataProps>()
-    const postStore = usePostStore()
+    const uploadedData = ref()
     const userStore = useUserStore()
-    const textArea = ref<null | HTMLTextAreaElement>(null)
-    let imageId = ''
-    const titleRules: RulesProp = [
-      { type: 'required', message: '名称不能为空' }
-    ]
-    const contentVal = ref('')
-    const contentRules: RulesProp = [
-      { type: 'required', message: '简介信息不能为空' }
-    ]
-    onMounted(() => {
-      if (isEditMode) {
-        postStore.fetchPost(postId).then((currentPost) => {
-          if (currentPost.image) {
-            uploadedData.value = { data: currentPost.image }
-          }
-          titleVal.value = currentPost.title
-          contentVal.value = currentPost.content || ''
-        })
+    const columnStore = useColumnStore()
+    const activeName = ref<ActiveName>('person')
+    const imageId = ref()
+    const userProfile = reactive<UserProps>({
+      column: '',
+      avatar: {},
+      title: '',
+      description: ''
+    })
+    let currentColumn = reactive<ColumnProps>(
+      {}
+    )
+    watchEffect(() => {
+      if (activeName.value === 'person') {
+        uploadedData.value = { data: userProfile.avatar }
+        userProfile.title = userStore.getCurrentAuthor().nickName
+        userProfile.description = userStore.getCurrentAuthor().description
+        console.log(userStore.getCurrentAuthor())
+        console.log('person')
+      } else {
+        uploadedData.value = { data: currentColumn.avatar }
+        userProfile.title = currentColumn.title
+        userProfile.description = currentColumn.description
+        console.log(currentColumn)
+        console.log('column')
       }
     })
-    const handleFileUploaded = (rawData: ResponseType<ImageProps>) => {
-      if (rawData.data._id) {
-        imageId = rawData.data._id
+    onMounted(() => {
+      userProfile.column = userStore.getCurrentAuthor().column
+      userProfile.avatar = userStore.getCurrentAuthor().avatar
+      userProfile.title = userStore.getCurrentAuthor().nickName
+      userProfile.description = userStore.getCurrentAuthor().description
+      uploadedData.value = { data: userProfile.avatar }
+      columnStore.fetchColumn(userProfile.column).then(() => {
+        currentColumn = columnStore.getColumnById(userProfile.column)
+      })
+    })
+    const nickNameRules: RulesProp = [
+      {
+        type: 'required',
+        message: '请输入昵称'
       }
-    }
-    const onFormSubmit = async (result: boolean) => {
-      if (result && userStore.data) {
-        const { column, _id } = userStore.data
-        if (column) {
-          const newPost: PostProps = {
-            title: titleVal.value,
-            content: contentVal.value,
-            column,
-            author: _id
-          }
-          if (imageId) {
-            newPost.image = imageId
-          }
-          // const actionName = isEditMode ? 'updatePost' : 'createPost'
-          // const sendData = isEditMode
-          //   ? {
-          //       id: route.query.id,
-          //       payload: newPost
-          //     }
-          //   : newPost
-          if (isEditMode) {
-            await postStore.updatePost(postId, newPost)
-          } else {
-            await postStore.createPost(newPost)
-          }
-          createMessage('发表成功，2秒后跳转到文章', 'success', 2000)
-          setTimeout(() => {
-            router.push({ name: 'column', params: { id: column } })
-          }, 2000)
-          // store.dispatch(actionName, sendData).then(() => {
-          //   createMessage('发表成功，2秒后跳转到文章', 'success', 2000)
-          //   setTimeout(() => {
-          //     router.push({ name: 'column', params: { id: column } })
-          //   }, 2000)
-          // })
-        }
+    ]
+    const descriptionRules: RulesProp = [
+      {
+        type: 'required',
+        message: '请输描述'
+      }
+    ]
+    const formSubmit = (validate: boolean) => {
+      if (validate) {
+        // const actionName = activeName.value === 'person' ? 'updateUser' : 'updateColumnById'
+        // const sendData = {
+        //   id: activeName.value === 'person' ? user._id : currentColumn.value._id,
+        //   data: {
+        //     title: userProfile.title,
+        //     nickName: userProfile.title,
+        //     avatar: imageId.value,
+        //     description: userProfile.description
+        //   }
+        // }
+        // store.dispatch(actionName, sendData)
+        //   .then(() => {
+        //     createMessage({
+        //       type: 'success',
+        //       message: '更新成功，2s后返回首页'
+        //     })
+        //     setTimeout(() => {
+        //       router.push('/home')
+        //     }, 2000)
+        //   })
       }
     }
     const uploadCheck = (file: File) => {
@@ -140,48 +145,23 @@ export default defineComponent({
       }
       return passed
     }
+    const handleFileUploaded = (rawData: ResponseType<ImageProps>) => {
+      if (rawData.data._id) {
+        imageId.value = rawData.data._id
+      }
+    }
     return {
-      titleRules,
-      titleVal,
-      contentVal,
-      contentRules,
-      onFormSubmit,
+      activeName,
+      nickNameRules,
+      descriptionRules,
+      formSubmit,
       uploadCheck,
       handleFileUploaded,
-      isEditMode,
       uploadedData,
-      textArea
+      userProfile
     }
   }
 })
 </script>
-<style>
-.create-post-page .file-upload-container {
-  height: 200px;
-  cursor: pointer;
-  overflow: hidden;
-}
 
-.create-post-page .file-upload-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.uploaded-area {
-  position: relative;
-}
-
-.uploaded-area:hover h3 {
-  display: block;
-}
-
-.uploaded-area h3 {
-  display: none;
-  position: absolute;
-  color: #999;
-  text-align: center;
-  width: 100%;
-  top: 50%;
-}
-</style>
+<style scoped></style>

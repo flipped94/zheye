@@ -62,7 +62,7 @@ export const usePostStore = defineStore('post', {
       this.data[data._id as string] = data
     },
     async createPost(payload: PostProps) {
-      const { data: rawData } = await axios.post<ResponseType<PostProps>>('/posts/', payload)
+      const { data: rawData } = await axios.post<ResponseType<PostProps>>('/article', payload)
       const { data } = rawData
       this.data[data._id as string] = data
     },
