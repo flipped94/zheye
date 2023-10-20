@@ -24,7 +24,7 @@ export const useUserStore = defineStore('user', {
       accessToken: localStorage.getItem('accessToken') || '',
       refreshToken: localStorage.getItem('refreshToken') || '',
       isLogin: false,
-      data: null
+      data: { column: '' }
     }
   },
   actions: {
@@ -44,7 +44,7 @@ export const useUserStore = defineStore('user', {
     },
     async updateAuthor(id: string, payload: UserDataProps) {
       const { data } = await axios.patch<ResponseType>('/author', payload)
-      this.data = { ...data.data }
+      this.data = { nickName: data.data.nickName, description: data.data.description }
     },
     logout() {
       this.accessToken = ''
@@ -63,6 +63,9 @@ export const useUserStore = defineStore('user', {
     }
   },
   getters: {
-    getCurrentAuthor: (state) => () => state.data
+    getCurrentAuthor: (state) => () => {
+      console.log(state.data)
+      return state.data
+    }
   }
 })

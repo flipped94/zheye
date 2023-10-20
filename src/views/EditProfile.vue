@@ -14,7 +14,6 @@
     <uploader action="/oss/upload" :beforeUpload="uploadCheck"
       @file-uploaded="handleFileUploaded" :uploaded="uploadedData"
       style="margin-left:auto; margin-right: auto; width: 200px;height: 200px;border-radius: 200px;overflow: hidden;cursor: pointer;border: 1px solid #efefef;">
-      <h2></h2>``
       <template #uploaded="dataProps">
         <img :src="dataProps.uploadedData && dataProps.uploadedData.data.url"
           style="height: 200px; width: 200px;">
@@ -22,13 +21,13 @@
     </uploader>
     <validate-form @form-submit="formSubmit">
       <div class="mb-3 validate-input">
-        <label class="form-lable">昵称</label>
-        <validate-input placeholder="请输入昵称" :rules="nickNameRules"
-          v-model="userProfile.title"></validate-input>
+        <label class="form-lable">{{ activeName === 'person' ? '昵称' : '专栏' }}</label>
+        <validate-input :placeholder="activeName === 'person' ? '请输入昵称' : '请输入专栏'" :rules="nickNameRules"
+          v-model="userProfile.nickName"></validate-input>
       </div>
       <div class="mb-3 validate-input">
-        <label class="form-label">描述</label>
-        <validate-input placeholder="请输入描述" :rules="descriptionRules"
+        <label class="form-label">{{ activeName === 'person' ? '个人简介' : '专栏简介' }}</label>
+        <validate-input :placeholder="activeName === 'person' ? '请输入个人简介' : '请输入专栏简介'" :rules="descriptionRules"
           v-model="userProfile.description"></validate-input>
       </div>
       <template #submit>
@@ -44,10 +43,10 @@ import ValidateForm from '../components/ValidateForm.vue'
 import ValidateInput, { RulesProp } from '../components/ValidateInput.vue'
 import Uploader from '../components/Uploader.vue'
 import { useStore } from 'vuex'
-import { GlobalDataProps, ResponseType, ImageProps, UserProps, ColumnProps } from '@/store'
+import { GlobalDataProps, ResponseType, ImageProps, ColumnProps } from '@/store'
 import { beforeUploadCheck } from '../helper'
 import createMessage from '@/components/createMessage'
-import { useUserStore } from '../store/user'
+import { useUserStore, UserDataProps } from '../store/user'
 import { useColumnStore } from '../store/column'
 type ActiveName = 'person' | 'column'
 export default defineComponent({
@@ -64,38 +63,43 @@ export default defineComponent({
     const columnStore = useColumnStore()
     const activeName = ref<ActiveName>('person')
     const imageId = ref()
-    const userProfile = reactive<UserProps>({
+    const userProfile = reactive<UserDataProps>({
+      _id: '',
       column: '',
       avatar: {},
-      title: '',
+      nickName: '',
       description: ''
     })
-    let currentColumn = reactive<ColumnProps>(
-      {}
-    )
+    let currentColumn = reactive<ColumnProps>({
+      _id: '',
+      title: '',
+      avatar: {},
+      description: ''
+    })
     watchEffect(() => {
       if (activeName.value === 'person') {
         uploadedData.value = { data: userProfile.avatar }
-        userProfile.title = userStore.getCurrentAuthor().nickName
-        userProfile.description = userStore.getCurrentAuthor().description
+        userProfile._id = (userStore.getCurrentAuthor() as UserDataProps)._id
+        userProfile.nickName = (userStore.getCurrentAuthor() as UserDataProps).nickName
+        userProfile.description = (userStore.getCurrentAuthor() as UserDataProps).description
         console.log(userStore.getCurrentAuthor())
         console.log('person')
       } else {
         uploadedData.value = { data: currentColumn.avatar }
-        userProfile.title = currentColumn.title
+        userProfile.nickName = currentColumn.title
         userProfile.description = currentColumn.description
         console.log(currentColumn)
         console.log('column')
       }
     })
     onMounted(() => {
-      userProfile.column = userStore.getCurrentAuthor().column
-      userProfile.avatar = userStore.getCurrentAuthor().avatar
-      userProfile.title = userStore.getCurrentAuthor().nickName
-      userProfile.description = userStore.getCurrentAuthor().description
+      userProfile.column = (userStore.getCurrentAuthor() as UserDataProps).column as string
+      userProfile.avatar = (userStore.getCurrentAuthor() as UserDataProps).avatar
+      userProfile.nickName = (userStore.getCurrentAuthor() as UserDataProps).nickName
+      userProfile.description = (userStore.getCurrentAuthor() as UserDataProps).description
       uploadedData.value = { data: userProfile.avatar }
       columnStore.fetchColumn(userProfile.column).then(() => {
-        currentColumn = columnStore.getColumnById(userProfile.column)
+        currentColumn = columnStore.getColumnById(userProfile.column as string)
       })
     })
     const nickNameRules: RulesProp = [
@@ -112,26 +116,22 @@ export default defineComponent({
     ]
     const formSubmit = (validate: boolean) => {
       if (validate) {
-        // const actionName = activeName.value === 'person' ? 'updateUser' : 'updateColumnById'
-        // const sendData = {
-        //   id: activeName.value === 'person' ? user._id : currentColumn.value._id,
-        //   data: {
-        //     title: userProfile.title,
-        //     nickName: userProfile.title,
-        //     avatar: imageId.value,
-        //     description: userProfile.description
-        //   }
-        // }
-        // store.dispatch(actionName, sendData)
-        //   .then(() => {
-        //     createMessage({
-        //       type: 'success',
-        //       message: '更新成功，2s后返回首页'
-        //     })
-        //     setTimeout(() => {
-        //       router.push('/home')
-        //     }, 2000)
-        //   })
+        if (activeName.value === 'person') {
+          userProfile.avatar = uploadedData.value.data
+          debugger
+          userStore.updateAuthor(userProfile._id as string, userProfile)
+        } else {
+          const column: ColumnProps = {
+            _id: currentColumn._id,
+            title: userProfile.nickName as string,
+            avatar: uploadedData.value.data,
+            description: userProfile.nickName as string
+          }
+          columnStore.updateColumnById(currentColumn._id as string, column).then(() => {
+            currentColumn = columnStore.getColumnById(userProfile.column as string)
+          })
+        }
+        createMessage('更新成功', 'success', 2000)
       }
     }
     const uploadCheck = (file: File) => {
@@ -146,8 +146,8 @@ export default defineComponent({
       return passed
     }
     const handleFileUploaded = (rawData: ResponseType<ImageProps>) => {
-      if (rawData.data._id) {
-        imageId.value = rawData.data._id
+      if (rawData.data.url) {
+        uploadedData.value.data.url = rawData.data.url
       }
     }
     return {

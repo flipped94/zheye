@@ -39,7 +39,8 @@ onMounted(() => {
       element: textArea.value,
       initialValue: innerValue.value,
       // toolbar: []
-      toolbar: ['bold', 'italic', 'heading', 'code', 'quote', 'unordered-list', 'ordered-list', 'link', 'upload-image', 'preview', 'side-by-side', 'fullscreen', 'guide']
+      toolbar: ['bold', 'italic', 'heading', 'code', 'quote', 'unordered-list', 'ordered-list', 'link', 'upload-image', 'preview', 'side-by-side', 'fullscreen', 'guide'],
+      imageUploadEndpoint: '/oss/upload'
     }
     easyMDEInstance = new EasyMDE(config)
     // 监控对应的事件

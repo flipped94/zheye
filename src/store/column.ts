@@ -44,6 +44,14 @@ export const useColumnStore = defineStore('column', {
         const { data } = rawData
         this.data[data._id] = data
       }
+    },
+    async updateColumnById(cid: string, payload: ColumnProps) {
+      const cIdArr = Object.keys(this.data)
+      if (!cIdArr.includes(cid)) {
+        const { data: rawData } = await axios.patch<ResponseType<ColumnProps>>(`/columns/${cid}`, payload)
+        const { data } = rawData
+        this.data[data._id] = data
+      }
     }
   },
   getters: {
