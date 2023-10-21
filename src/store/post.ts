@@ -30,6 +30,7 @@ export const usePostStore = defineStore('post', {
   },
   actions: {
     async fetchPosts(params: ListReqType = {}) {
+      debugger
       const { cid = '', currentPage = 1, pageSize = 5 } = params
       const { loadedColumns } = this
       // 1 没有加载过这个专栏的列表
@@ -48,13 +49,18 @@ export const usePostStore = defineStore('post', {
     async fetchPost(id: string) {
       const certainPost = this.data[id]
       if (!certainPost || !certainPost.content) {
-        const { data: rawData } = await axios.get<ResponseType<PostProps>>(`/posts/${id}`)
+        const { data: rawData } = await axios.get<ResponseType<PostProps>>(`/article/${id}`)
         const { data } = rawData
         this.data[data._id as string] = data
         return data
       } else {
         return certainPost
       }
+    },
+    async fetchPostContent(id: string) {
+      const { data: rawData } = await axios.get<ResponseType<string>>(`/article/content/${id}`)
+      const { data } = rawData
+      return data
     },
     async updatePost(id: string, payload: PostProps) {
       const { data: rawData } = await axios.patch<ResponseType<PostProps>>(`/posts/${id}`, payload)

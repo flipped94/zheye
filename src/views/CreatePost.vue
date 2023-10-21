@@ -66,6 +66,7 @@ import Uploader from '../components/Uploader.vue'
 import Editor from '../components/Editor.vue'
 import createMessage from '../components/createMessage'
 import { beforeUploadCheck } from '../helper'
+import axios, { AxiosRequestConfig } from 'axios'
 export default defineComponent({
   name: 'CreatePost',
   components: {
@@ -116,7 +117,13 @@ export default defineComponent({
             uploadedData.value = { data: currentPost.image }
           }
           titleVal.value = currentPost.title
-          contentVal.value = currentPost.content || ''
+          if (!currentPost.isHTML) {
+            contentVal.value = currentPost.content || ''
+          } else {
+            postStore.fetchPostContent(postId).then(content => {
+              contentVal.value = content
+            })
+          }
         })
       }
     })
